@@ -31,7 +31,13 @@ async function login() {
   }
 }
 async function register(){try{await api.post('/api/users/register',{username:username.value,password:password.value});alert('注册成功，请登录')}catch(e){alert('注册失败')}} 
-async function load(){messages.value=(await api.get('/api/messages/'+conversationId)).data.reverse()}
+async function load() {
+  const r = await api.get('/api/messages/' + conversationId);
+
+  console.log('消息接口返回：', r.data);
+
+  messages.value = r.data.reverse();
+}
 async function send() {
   if (!content.value.trim()) return;
 
@@ -51,4 +57,11 @@ async function send() {
 }
 onMounted(()=>{})
 </script>
-<template><div class="page"><div v-if="!logged" class="login"><h1>Enterprise IM</h1><p>企业级即时通信平台</p><el-input v-model="username" placeholder="用户名"/><el-input v-model="password" type="password" placeholder="密码" show-password/><div><el-button type="primary" @click="login">登录</el-button><el-button @click="register">注册</el-button></div></div><div v-else class="chat"><header><b>Enterprise IM</b><span>产品研发群</span></header><main><div v-for="m in messages" :key="m.id" class="msg"><b>用户{{m.senderId}}</b><p>{{m.content}}</p></div></main><footer><el-input v-model="content" placeholder="输入消息" @keyup.enter="send"/><el-button type="primary" @click="send">发送</el-button></footer></div></div></template>
+<template><div class="page"><div v-if="!logged" class="login"><h1>Enterprise IM</h1><p>企业级即时通信平台</p><el-input v-model="username" placeholder="用户名"/><el-input v-model="password" type="password" placeholder="密码" show-password/><div><el-button type="primary" @click="login">登录</el-button><el-button @click="register">注册</el-button></div></div><div v-else class="chat"><header><b>Enterprise IM</b><span>产品研发群</span></header>
+<main>
+  <div v-for="m in messages" :key="m.id" class="msg">
+    <b>{{ m.senderName || ('用户' + m.senderId) }}</b>
+    <p>{{ m.content }}</p>
+  </div>
+</main>
+<footer><el-input v-model="content" placeholder="输入消息" @keyup.enter="send"/><el-button type="primary" @click="send">发送</el-button></footer></div></div></template>
