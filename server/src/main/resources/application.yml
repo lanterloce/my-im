@@ -1,0 +1,20 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: enterprise-im-server
+  datasource:
+    url: jdbc:mysql://localhost:3307/enterprise_im?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: im
+    password: im123456
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
