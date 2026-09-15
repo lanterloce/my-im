@@ -8,6 +8,7 @@ import {
 } from 'vue'
 
 import axios from 'axios'
+import { saveTokens, getAccessToken, getRefreshToken, clearTokens } from './utils/auth'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 
@@ -39,11 +40,44 @@ const api = axios.create({
   }
 })
 
+let refreshPromise: Promise<string> | null = null
+
+api.interceptors.request.use(config => {
+  const saved = localStorage.getItem('access_token')
+  if (saved) config.headers.Authorization = `Bearer ${saved}`
+  return config
+})
+
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const original = error.config
+    if (error.response?.status !== 401 || original?._retry || !localStorage.getItem('refresh_token')) {
+      return Promise.reject(error)
+    }
+    original._retry = true
+    if (!refreshPromise) {
+      refreshPromise = api.post('/api/auth/refresh', {
+        refreshToken: localStorage.getItem('refresh_token')
+      }).then(response => {
+        localStorage.setItem('access_token', response.data.accessToken)
+        localStorage.setItem('refresh_token', response.data.refreshToken)
+        return response.data.accessToken
+      }).finally(() => {
+        refreshPromise = null
+      })
+    }
+    const newToken = await refreshPromise
+    original.headers.Authorization = `Bearer ${newToken}`
+    return api(original)
+  }
+)
+
 /**
  * 登录相关
  */
-const username = ref('demo')
-const password = ref('123456')
+const username = ref('')
+const password = ref('')
 
 const logged = ref(false)
 const token = ref('')
@@ -136,14 +170,17 @@ function isMine(message: ChatMessage) {
  */
 async function login() {
   try {
-    const response = await api.post('/api/users/login', {
+    const response = await api.post('/api/auth/login', {
       username: username.value,
       password: password.value
     })
 
     console.log('登录返回数据：', response.data)
 
-    token.value = response.data.token || ''
+    token.value = response.data.token || response.data.accessToken || ''
+    if (response.data.accessToken && response.data.refreshToken) {
+      saveTokens(response.data.accessToken, response.data.refreshToken)
+    }
 
     currentUser.value = response.data.user || {
       id: response.data.userId || response.data.id,
@@ -172,7 +209,7 @@ async function login() {
  */
 async function register() {
   try {
-    await api.post('/api/users/register', {
+    await api.post('/api/auth/register', {
       username: username.value,
       password: password.value
     })
@@ -715,10 +752,66 @@ function disconnectWebSocket() {
 }
 
 /**
+ * 刷新页面后恢复登录状态
+ */
+async function restoreLogin() {
+  const accessToken = getAccessToken()
+  const refreshToken = getRefreshToken()
+
+  if (!accessToken && !refreshToken) return
+
+  try {
+    let response
+
+    if (accessToken) {
+      response = await api.get('/api/auth/me')
+    }
+
+    if (!response?.data) throw new Error('Access Token 无效')
+
+    currentUser.value = response.data
+    logged.value = true
+    await loadConversations()
+    return
+  } catch (error) {
+    console.warn('Access Token 无效，尝试刷新：', error)
+  }
+
+  if (refreshToken) {
+    try {
+      const refreshResponse = await axios.post(
+        'http://localhost:8080/api/auth/refresh',
+        { refreshToken }
+      )
+
+      const newAccessToken = refreshResponse.data.accessToken || refreshResponse.data.token
+      const newRefreshToken = refreshResponse.data.refreshToken || refreshToken
+
+      if (!newAccessToken) throw new Error('刷新 Token 失败')
+
+      saveTokens(newAccessToken, newRefreshToken)
+
+      const meResponse = await api.get('/api/auth/me')
+      currentUser.value = meResponse.data
+      logged.value = true
+      await loadConversations()
+      return
+    } catch (error) {
+      console.error('Refresh Token 也已失效：', error)
+    }
+  }
+
+  clearTokens()
+  logged.value = false
+  currentUser.value = null
+}
+
+/**
  * 页面加载
  */
-onMounted(() => {
+onMounted(async () => {
   console.log('聊天页面已加载')
+  await restoreLogin()
 })
 
 /**
