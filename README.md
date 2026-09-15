@@ -36,3 +36,18 @@ An enterprise-grade Instant Messaging (IM) system built with Spring Boot 3, Vue 
 Start MySQL 8 and Redis 7 containers:
 ```bash
 docker compose up -d
+
+###2. Start Backend Service
+cd server
+mvn spring-boot:run
+Backend Base URL: http://localhost:8080
+Health Check API: http://localhost:8080/api/health
+
+###3. Start Frontend Service
+cd web
+npm install
+npm run dev
+Frontend App: http://localhost:5173
+
+
+
