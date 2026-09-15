@@ -1,40 +1,38 @@
+<div align="center">
+
 # Enterprise IM Full Stack
 
-包含：
-- web：Vue 3 + TypeScript + Vite
-- server：Spring Boot 3 + Java 21
-- MySQL 8
-- Redis 7
-- WebSocket
-- Docker Compose
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Vue 3](https://img.shields.io/badge/Vue-3.x-4fc08d.svg)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 启动基础设施
+English | [简体中文](./README_zh-CN.md)
+
+An enterprise-grade Instant Messaging (IM) system built with Spring Boot 3, Vue 3, and WebSocket.
+
+</div>
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Vue 3, TypeScript, Vite, Pinia, Vue Router
+- **Backend**: Spring Boot 3, Java 21, Spring Security, Spring Data JPA / MyBatis-Plus
+- **Real-time Messaging**: WebSocket (STOMP / SockJS)
+- **Data & Caching**: MySQL 8.0, Redis 7.0
+- **DevOps**: Docker, Docker Compose
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js >= 18.x
+- JDK >= 21
+- Docker & Docker Compose
+
+### 1. Start Infrastructure
+Start MySQL 8 and Redis 7 containers:
 ```bash
 docker compose up -d
-```
-
-## 启动后端
-```bash
-cd server
-mvn spring-boot:run
-```
-
-后端地址：http://localhost:8080  
-健康检查：http://localhost:8080/api/health
-
-## 启动前端
-```bash
-cd web
-npm install
-npm run dev
-```
-前端：http://localhost:5173
-
-## 默认数据库
-- 数据库：enterprise_im
-- 用户：im
-- 密码：im123456
-- MySQL端口：3306
-- Redis端口：6379
-
-
